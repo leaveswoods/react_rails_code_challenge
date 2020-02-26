@@ -1,0 +1,21 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  by: MyString
+  descendants: 1
+  score: 1
+  title: MyString
+  item_type: MyString
+  url: MyString
+  time: 
+  image: MyString
+
+two:
+  by: MyString
+  descendants: 1
+  score: 1
+  title: MyString
+  item_type: MyString
+  url: MyString
+  time: 
+  image: MyString
