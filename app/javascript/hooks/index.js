@@ -13,7 +13,11 @@ export function useArticles(searchQuery) {
       if (searchQuery) {
         url += `&query=${searchQuery}`;
       }
-      const res = await axios.get(url);
+      const res = await axios.get(url, {
+        headers: {
+          'Access-Control-Allow-Origin': '*'
+        }
+      });
       if (res.data && res.data.articles) {
         if (page === 1) {
           setArticles(res.data.articles);

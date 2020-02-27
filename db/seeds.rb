@@ -74,15 +74,15 @@ class FetchArticlesFromHackerNews
       ((last_id - count_backwards)..last_id).each do |id|
         threads_articles << Thread.new {
           # Encounter a problem that some stories are duplicate in response, have to filter it out
-          if (@@uniq_ids.add?(id) {
+          if @@uniq_ids.add?(id) 
             item = self.class.get(self.generate_get_artical_url(id)).parsed_response
             # Need to check if the item type is story as it could be poll, comment... 
-            if item && item['type'] == 'story')
+            if item && item['type'] == 'story'
               @@articles << item
               item['image'] = self.get_article_preview_image_url(item['url'])
               self.print_article_id(item)
             end
-          }
+          end
         }
       end
       ThreadsWait.all_waits(*threads_articles)
@@ -107,20 +107,20 @@ class SeedArticles < FetchArticlesFromHackerNews
   end
   
   def seedArticles()
-    @@articles.each do |article|
-      new_a = Article.where(:id => article['id']).first_or_create do |new_a|
-        new_a.by = article['by']
-        new_a.descendants = article['descendants']
-        new_a.score = article['score']
-        new_a.title = article['title']
-        new_a.item_type = article['type']
-        new_a.url = article['url']
-        new_a.time = article['time']
-        new_a.text = article['text']
-        new_a.image = article['image']
-        puts "Created article #{new_a['id']}"
-      end
-    end
+    # @@articles.each do |article|
+    #   new_a = Article.where(:id => article['id']).first_or_create do |new_a|
+    #     new_a.by = article['by']
+    #     new_a.descendants = article['descendants']
+    #     new_a.score = article['score']
+    #     new_a.title = article['title']
+    #     new_a.item_type = article['type']
+    #     new_a.url = article['url']
+    #     new_a.time = article['time']
+    #     new_a.text = article['text']
+    #     new_a.image = article['image']
+    #     puts "Created article #{new_a['id']}"
+    #   end
+    # end
   end
 end
 
