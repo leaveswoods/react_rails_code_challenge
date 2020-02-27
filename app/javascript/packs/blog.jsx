@@ -8,23 +8,22 @@ import { Row, Col} from 'antd';
 import 'antd/es/row/style/css';
 import 'antd/es/col/style/css';
 
-const imageRules = {
-  rules: [
-    ['meta[property="og:image"]', node => node.element.getAttribute('content')],
-  ]
-};
-const FETCH_ARTICLES_URL = 'http://localhost:3000/api/v1/articles'
+import { isInViewport } from '../helpers/utils';
+import { FETCH_ARTICLES_URL, ARTICLE_NUMBER_LIMIT } from '../constants/api'
 
-function usePosts () {
+function useArticles () {
   const [articles, setArticles] = useState([])
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1);
 
   const fetchArticles = async () => {
     try {
-      const res = await axios.get(FETCH_ARTICLES_URL);
-      
+      const url = `${FETCH_ARTICLES_URL}?limit=${ARTICLE_NUMBER_LIMIT}&page=${page}`;
+      const res = await axios.get(url);
       if (res.data && res.data.articles) {
-        setArticles(res.data.articles);
+        setArticles(
+          articles.concat(res.data.articles)
+        );
         setLoading(false);
       }
     } catch (error) {
@@ -33,8 +32,22 @@ function usePosts () {
   }
 
   useEffect(() => {
-      fetchArticles()
-  }, [])
+      fetchArticles();
+  }, [page])
+
+  const loadMoreArticles = () => {
+    const moreButton = document.getElementById('more');
+    if (isInViewport(moreButton)) {
+      setPage(page + 1);  
+    }
+  }
+
+  useEffect(() => {
+    window.addEventListener('scroll', loadMoreArticles)
+    return () => {
+      window.removeEventListener('scroll', loadMoreArticles)
+    }
+  })
 
   return [articles, loading];
 }
@@ -52,6 +65,7 @@ const ArticlesList = styled.ul`
 
 const Article = styled.li`
   display: flex;
+  padding-bottom: 20px;
 `
 
 const ArticleImage = styled.div`
@@ -73,31 +87,81 @@ const ArticleTitle = styled.div`
   font-weight: 400;
   font-size: 1.25rem;
   line-height: 1.5;
+  margin: 25px 0px 25px 0px;
+`
+
+const ReadArticle = styled.a.attrs({
+  src: props => props.src
+})`
+  color: rgba(0, 0, 0, 0.88);
+  font-family: SofiaProWeb, Helvetica, Arial, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.125em;
+  line-height: 1;
+  padding-bottom: 0.25rem;
+  text-align: center;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  border-bottom: 0.125rem solid currentcolor;
   margin: 0px;
+  text-decoration: none;
+  transition: all 100ms ease-in 0s;
+`
+
+const Divider = styled.div`
+  background-color: rgb(238, 226, 215);
+  height: 0.125rem;
+  width: 100%;
+  margin-bottom: 30px;
+`
+
+const MorePost = styled.div.attrs({
+  id: 'more'
+})`
+  width: 160px;
+  height: 30px;
+  margin: auto;
+  color: rgba(0,0,0,0.88);
+  font-family: SofiaProWeb,Helvetica,Arial,sans-serif;
+  border: 1px solid rgba(140, 140, 140, 0.88);
+  border-radius: 20px;
+  text-align: center;
+  font-size: 20px;
 `
 
 function App () {
-  const [articles, loading] = usePosts();
+  const [articles, loading] = useArticles();
+  const isDisplayMoreButton = !!articles.length;
+
   return <Container>
       <ArticlesList>
         {articles.map((post) => {
           if (post.image) {
-            return <Article key={post.id}>
+            return <><Article key={post.id}>
               <Row type='flex' style={{ width: '100%' }}>
                 <Col xs={24} sm={24} md={24} lg={8}>
                   <ArticleImage src={post.image}/>
                 </Col>
                 <Col xs={24} sm={24} md={24} lg={16}>
                   <ArticleContent>
-                    {post.title}
+                      <ArticleTitle>
+                        {post.title}
+                      </ArticleTitle>
+                      <ReadArticle src={post.url}>
+                        Read Article
+                      </ReadArticle>
                   </ArticleContent>
                 </Col>
               </Row>
             </Article>
+              <Divider />
+            </>
           }
-          
         })}
       </ArticlesList>
+      {  isDisplayMoreButton && <MorePost>
+        More Articles
+      </MorePost> }
   </Container>
 }
 
