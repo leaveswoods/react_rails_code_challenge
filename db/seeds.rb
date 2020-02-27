@@ -20,12 +20,25 @@ class FetchArticlesFromHackerNews
   @@uniq_ids = Set.new
   def initialize
     self.get_articles()
-    # self.get_more_500_articles ()
-
+    self.get_more_500_articles()
   end
 
   def generate_get_artical_url(item_id)
     return "#{GET_ARTICLE_URL_BASE}/#{item_id}.json?print=pretty"
+  end
+
+  def get_article_preview_image_url(url)
+    if url
+      begin
+        page = Nokogiri::HTML(open(url))
+        tag = page.at('meta[property="og:image"]')
+        if tag
+          return tag.attributes['content'].value
+        end
+      rescue
+        puts "Get image url failed"
+      end
+    end
   end
 
   def get_articles()
@@ -34,12 +47,16 @@ class FetchArticlesFromHackerNews
     threads_articles= []
     article_ids.each do |article_id|
       threads_articles << Thread.new {
-        article = self.class.get(self.generate_get_artical_url(article_id)).parsed_response
-        if article
-          @@uniq_ids.add(article['id'])
-          article['image'] = get_article_preview_image_url(article['url'])
-          @@articles << article
-          self.print_article_id(article)
+        begin
+          article = self.class.get(self.generate_get_artical_url(article_id)).parsed_response
+          if article
+            @@uniq_ids.add(article['id'])
+            article['image'] = self.get_article_preview_image_url(article['url'])
+            @@articles << article
+            self.print_article_id(article)
+          end
+        rescue
+          puts "Get Article id #{article_id} failed"
         end
       }
     end
@@ -57,6 +74,7 @@ class FetchArticlesFromHackerNews
           item = self.class.get(self.generate_get_artical_url(id)).parsed_response
           if item && item['type'] == 'story' && @@uniq_ids.add?(item['id'])
             @@articles << item
+            item['image'] = self.get_article_preview_image_url(item['url'])
             self.print_article_id(item)
           end
         }
@@ -76,39 +94,29 @@ class FetchArticlesFromHackerNews
 
 end
 
-def get_article_preview_image_url(url)
-  if url
-    begin
-      page = Nokogiri::HTML(open(url))
-      tag = page.at('meta[property="og:image"]')
-      if tag
-        return tag.attributes['content'].value
-      end
-    rescue
-      puts "Get image url failed"
-    end
-    
-    
+class SeedArticles < FetchArticlesFromHackerNews
+  def initialize
+    self.seedArticles()
   end
-end
-
-def seedArticles()
-  fetch = FetchArticlesFromHackerNews.new()
-  fetch.articles.each do |article|
-    new_a = Article.where(:id => article['id']).first_or_create do |new_a|
-      new_a.by = article['by']
-      new_a.descendants = article['descendants']
-      new_a.score = article['score']
-      new_a.title = article['title']
-      new_a.item_type = article['type']
-      new_a.url = article['url']
-      new_a.time = article['time']
-      new_a.text = article['text']
-      new_a.image = article['image']
-      puts "Created article #{new_a['id']}"
+  
+  def seedArticles()
+    fetch = FetchArticlesFromHackerNews.new()
+    fetch.articles.each do |article|
+      new_a = Article.where(:id => article['id']).first_or_create do |new_a|
+        new_a.by = article['by']
+        new_a.descendants = article['descendants']
+        new_a.score = article['score']
+        new_a.title = article['title']
+        new_a.item_type = article['type']
+        new_a.url = article['url']
+        new_a.time = article['time']
+        new_a.text = article['text']
+        new_a.image = article['image']
+        puts "Created article #{new_a['id']}"
+      end
     end
   end
 end
 
 # Fetch articals from Hacker News
-seedArticles()
+seed_articles = SeedArticles.new
