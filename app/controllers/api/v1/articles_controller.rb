@@ -10,8 +10,13 @@ module Api
       def index
         page = params[:page]
         limit = params[:limit]
+        query = params[:query]
         offset = page * limit
-        @articles = Article.all.limit(limit).offset(offset)
+        if query
+          @articles = Article.search_for(query).limit(limit)
+        else
+          @articles = Article.all.limit(limit).offset(offset)
+        end
         render json: { articles: @articles }
       end
 

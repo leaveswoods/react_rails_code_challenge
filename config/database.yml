@@ -22,3 +22,9 @@ development:
 test:
   <<: *default
   database: blog_test
+
+production:
+    <<: *default
+    database: blog_prod
+    username: linmingye
+    password: <%= ENV['MYAPP_DATABASE_PASSWORD'] %>
