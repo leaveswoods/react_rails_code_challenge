@@ -12,6 +12,8 @@ require 'nokogiri'
 require 'open-uri'
 
 # Article here is descripbed as Story in Hacker New API
+# Hacker News API only returns the last 500 new stories
+# so I have to count backward with the 500th id, then get 500 more stories one by one
 class FetchArticlesFromHackerNews
   include HTTParty
   GET_NEW_ARTICLE_IDS_URL = 'https://hacker-news.firebaseio.com/v0/newstories.json?print=pretty'
@@ -71,12 +73,16 @@ class FetchArticlesFromHackerNews
       threads_articles = []
       ((last_id - count_backwards)..last_id).each do |id|
         threads_articles << Thread.new {
-          item = self.class.get(self.generate_get_artical_url(id)).parsed_response
-          if item && item['type'] == 'story' && @@uniq_ids.add?(item['id'])
-            @@articles << item
-            item['image'] = self.get_article_preview_image_url(item['url'])
-            self.print_article_id(item)
-          end
+          # Encounter a problem that some stories are duplicate in response, have to filter it out
+          if (@@uniq_ids.add?(id) {
+            item = self.class.get(self.generate_get_artical_url(id)).parsed_response
+            # Need to check if the item type is story as it could be poll, comment... 
+            if item && item['type'] == 'story')
+              @@articles << item
+              item['image'] = self.get_article_preview_image_url(item['url'])
+              self.print_article_id(item)
+            end
+          }
         }
       end
       ThreadsWait.all_waits(*threads_articles)
@@ -96,12 +102,12 @@ end
 
 class SeedArticles < FetchArticlesFromHackerNews
   def initialize
+    fetch = FetchArticlesFromHackerNews.new
     self.seedArticles()
   end
   
   def seedArticles()
-    fetch = FetchArticlesFromHackerNews.new()
-    fetch.articles.each do |article|
+    @@articles.each do |article|
       new_a = Article.where(:id => article['id']).first_or_create do |new_a|
         new_a.by = article['by']
         new_a.descendants = article['descendants']
