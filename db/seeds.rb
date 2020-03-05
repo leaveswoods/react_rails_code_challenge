@@ -31,11 +31,14 @@ class FetchArticlesFromHackerNews
 
   def get_article_preview_image_url(url)
     if url
+      puts 'Getting meta image'
       begin
         page = Nokogiri::HTML(open(url))
         tag = page.at('meta[property="og:image"]')
         if tag
-          return tag.attributes['content'].value
+          image_url = tag.attributes['content'].value
+          puts "Get image url success: #{image_url}"
+          return image_url
         end
       rescue
         puts "Get image url failed"
@@ -50,7 +53,9 @@ class FetchArticlesFromHackerNews
     article_ids.each do |article_id|
       threads_articles << Thread.new {
         begin
-          article = self.class.get(self.generate_get_artical_url(article_id)).parsed_response
+          article = self.class.get(
+            self.generate_get_artical_url(article_id)
+          ).parsed_response
           if article
             @@uniq_ids.add(article['id'])
             article['image'] = self.get_article_preview_image_url(article['url'])
@@ -64,6 +69,7 @@ class FetchArticlesFromHackerNews
     end
     #waiting all threads finish to go on
     ThreadsWait.all_waits(*threads_articles)
+    puts 'Get last 500 articles done.'
   end 
 
   def get_more_500_articles()
@@ -75,11 +81,13 @@ class FetchArticlesFromHackerNews
         threads_articles << Thread.new {
           # Encounter a problem that some stories are duplicate in response, have to filter it out
           if @@uniq_ids.add?(id) 
-            item = self.class.get(self.generate_get_artical_url(id)).parsed_response
+            item = self.class.get(
+              self.generate_get_artical_url(id)
+            ).parsed_response
             # Need to check if the item type is story as it could be poll, comment... 
             if item && item['type'] == 'story'
-              @@articles << item
               item['image'] = self.get_article_preview_image_url(item['url'])
+              @@articles << item
               self.print_article_id(item)
             end
           end
@@ -88,6 +96,7 @@ class FetchArticlesFromHackerNews
       ThreadsWait.all_waits(*threads_articles)
       last_id -= count_backwards
     end
+    puts 'Get the other 500 articles done.'
   end
 
   def print_article_id(article)
@@ -107,20 +116,20 @@ class SeedArticles < FetchArticlesFromHackerNews
   end
   
   def seedArticles()
-    # @@articles.each do |article|
-    #   new_a = Article.where(:id => article['id']).first_or_create do |new_a|
-    #     new_a.by = article['by']
-    #     new_a.descendants = article['descendants']
-    #     new_a.score = article['score']
-    #     new_a.title = article['title']
-    #     new_a.item_type = article['type']
-    #     new_a.url = article['url']
-    #     new_a.time = article['time']
-    #     new_a.text = article['text']
-    #     new_a.image = article['image']
-    #     puts "Created article #{new_a['id']}"
-    #   end
-    # end
+    @@articles.each do |article|
+      new_a = Article.where(:id => article['id']).first_or_create do |new_a|
+        new_a.by = article['by']
+        new_a.descendants = article['descendants']
+        new_a.score = article['score']
+        new_a.title = article['title']
+        new_a.item_type = article['type']
+        new_a.url = article['url']
+        new_a.time = article['time']
+        new_a.text = article['text']
+        new_a.image = article['image']
+        puts "Created article #{new_a['id']}"
+      end
+    end
   end
 end
 
