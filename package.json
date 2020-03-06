@@ -1,6 +1,10 @@
 {
   "name": "react_rails",
   "private": true,
+  "scripts": {
+    "start:dev": "webpack --watch",
+    "start:prod": "NODE_ENV=production webpack"
+  },
   "dependencies": {
     "antd": "^3.26.12",
     "axios": "^0.19.2",

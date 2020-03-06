@@ -1,24 +1,27 @@
-# README
+# System Dependencies
+`Ruby >= 2.6`
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+`Postgres >= 9.5`
 
-Things you may want to cover:
+`Node >= 13.8`
 
-* Ruby version
 
-* System dependencies
+# How to start
+## Backend
+Backend Rails app and Databbase server are runned as containers.
+Run this command to build docker images
+  ```shell script
+    sh setup.sh
+  ```
+Then run 
+  ```shell script
+    docker-compose -f docker-compose.yml up
+  ```
+It should spin up postgres service and rails app service.
+## Frontend
 
-* Configuration
+**The app did not use webpacker to handle frontend, instead, use custom webpack config and setup**
 
-* Database creation
+Run `yarn` in root folder to install all depencies, then run `yarn run start:dev` for development bundling, `yarn run start:prod` for production build
 
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+Javascript bundles will be bundled and piped to `root_folder/public/packs/js`
